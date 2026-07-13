@@ -1,46 +1,39 @@
-import { Request, Response } from "express";
-import mongoose from "mongoose";
+import { Request, Response, NextFunction } from "express";
 import { Experience } from "../models/Experience";
-import { ApiError } from "../utils/ApiError";
-import { asyncHandler } from "../utils/ApiError";
 
-const findExperience = async (id: string) => {
-  if (mongoose.Types.ObjectId.isValid(id)) {
-    return Experience.findById(id);
+export async function getExperiences(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const experiences = await Experience.find().sort({ order: 1, createdAt: -1 });
+    res.json({ success: true, data: experiences });
+  } catch (error) {
+    next(error);
   }
-  return null;
-};
+}
 
-export const getExperiences = asyncHandler(async (_req: Request, res: Response) => {
-  const experiences = await Experience.find().sort({ order: 1, startDate: -1 });
-  res.json({ success: true, data: experiences });
-});
+export async function createExperience(req: Request, res: Response, next: NextFunction) {
+  try {
+    const experience = await Experience.create(req.body);
+    res.status(201).json({ success: true, data: experience });
+  } catch (error) {
+    next(error);
+  }
+}
 
-export const getExperience = asyncHandler(async (req: Request, res: Response) => {
-  const experience = await findExperience(String(req.params.id));
-  if (!experience) throw new ApiError(404, "Experience not found", "NOT_FOUND");
-  res.json({ success: true, data: experience });
-});
+export async function updateExperience(req: Request, res: Response, next: NextFunction) {
+  try {
+    const experience = await Experience.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!experience) return res.status(404).json({ success: false, message: "Experience not found" });
+    res.json({ success: true, data: experience });
+  } catch (error) {
+    next(error);
+  }
+}
 
-export const createExperience = asyncHandler(async (req: Request, res: Response) => {
-  const experience = await Experience.create(req.body);
-  res.status(201).json({ success: true, data: experience, message: "Experience created" });
-});
-
-export const updateExperience = asyncHandler(async (req: Request, res: Response) => {
-  const experience = await findExperience(String(req.params.id));
-  if (!experience) throw new ApiError(404, "Experience not found", "NOT_FOUND");
-
-  Object.assign(experience, req.body);
-  await experience.save();
-
-  res.json({ success: true, data: experience, message: "Experience updated" });
-});
-
-export const deleteExperience = asyncHandler(async (req: Request, res: Response) => {
-  const experience = await findExperience(String(req.params.id));
-  if (!experience) throw new ApiError(404, "Experience not found", "NOT_FOUND");
-
-  await experience.deleteOne();
-  res.json({ success: true, message: "Experience deleted" });
-});
+export async function deleteExperience(req: Request, res: Response, next: NextFunction) {
+  try {
+    await Experience.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: "Experience deleted" });
+  } catch (error) {
+    next(error);
+  }
+}

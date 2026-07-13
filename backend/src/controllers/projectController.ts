@@ -1,75 +1,54 @@
-import { Request, Response } from "express";
-import slugify from "slugify";
-import mongoose from "mongoose";
+import { Request, Response, NextFunction } from "express";
 import { Project } from "../models/Project";
-import { ApiError } from "../utils/ApiError";
-import { asyncHandler } from "../utils/ApiError";
 
-const findProject = async (id: string) => {
-  if (mongoose.Types.ObjectId.isValid(id)) {
-    const byId = await Project.findById(id);
-    if (byId) return byId;
+export async function getProjects(req: Request, res: Response, next: NextFunction) {
+  try {
+    const filter: Record<string, unknown> = {};
+    if (req.query.category) filter.category = req.query.category;
+    if (req.query.featured === "true") filter.featured = true;
+
+    const projects = await Project.find(filter).sort({ order: 1, createdAt: -1 });
+    res.json({ success: true, data: projects });
+  } catch (error) {
+    next(error);
   }
-  return Project.findOne({ slug: id });
-};
+}
 
-export const getProjects = asyncHandler(async (req: Request, res: Response) => {
-  const { search, technology, featured } = req.query;
-  const filter: Record<string, unknown> = {};
-
-  if (search && typeof search === "string") {
-    filter.$or = [
-      { title: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
-    ];
+export async function getProject(req: Request, res: Response, next: NextFunction) {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ success: false, message: "Project not found" });
+    res.json({ success: true, data: project });
+  } catch (error) {
+    next(error);
   }
+}
 
-  if (technology && typeof technology === "string") {
-    filter.technologies = technology;
+export async function createProject(req: Request, res: Response, next: NextFunction) {
+  try {
+    const project = await Project.create(req.body);
+    res.status(201).json({ success: true, data: project });
+  } catch (error) {
+    next(error);
   }
+}
 
-  if (featured !== undefined) {
-    filter.featured = featured === "true";
+export async function updateProject(req: Request, res: Response, next: NextFunction) {
+  try {
+    const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!project) return res.status(404).json({ success: false, message: "Project not found" });
+    res.json({ success: true, data: project });
+  } catch (error) {
+    next(error);
   }
+}
 
-  const projects = await Project.find(filter).sort({ order: 1, createdAt: -1 });
-
-  res.json({ success: true, data: projects });
-});
-
-export const getProject = asyncHandler(async (req: Request, res: Response) => {
-  const project = await findProject(String(req.params.id));
-  if (!project) throw new ApiError(404, "Project not found", "NOT_FOUND");
-  res.json({ success: true, data: project });
-});
-
-export const createProject = asyncHandler(async (req: Request, res: Response) => {
-  const slug =
-    req.body.slug ||
-    slugify(req.body.title, { lower: true, strict: true });
-
-  const project = await Project.create({ ...req.body, slug });
-  res.status(201).json({ success: true, data: project, message: "Project created" });
-});
-
-export const updateProject = asyncHandler(async (req: Request, res: Response) => {
-  const project = await findProject(String(req.params.id));
-  if (!project) throw new ApiError(404, "Project not found", "NOT_FOUND");
-
-  if (req.body.title && !req.body.slug) {
-    req.body.slug = slugify(req.body.title, { lower: true, strict: true });
+export async function deleteProject(req: Request, res: Response, next: NextFunction) {
+  try {
+    const project = await Project.findByIdAndDelete(req.params.id);
+    if (!project) return res.status(404).json({ success: false, message: "Project not found" });
+    res.json({ success: true, message: "Project deleted" });
+  } catch (error) {
+    next(error);
   }
-
-  Object.assign(project, req.body);
-  await project.save();
-
-  res.json({ success: true, data: project, message: "Project updated" });
-});
-
-export const deleteProject = asyncHandler(async (req: Request, res: Response) => {
-  const project = await findProject(String(req.params.id));
-  if (!project) throw new ApiError(404, "Project not found", "NOT_FOUND");
-
-  await project.deleteOne();
-  res.json({ success: true, message: "Project deleted" });
-});
+}

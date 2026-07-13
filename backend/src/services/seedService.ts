@@ -1,187 +1,98 @@
-import mongoose from "mongoose";
-import { connectDB } from "../config/db";
-import { Project } from "../models/Project";
+import bcrypt from "bcryptjs";
+import { Admin } from "../models/Admin";
+import { Skill } from "../models/Skill";
 import { Certification } from "../models/Certification";
-import { Experience } from "../models/Experience";
+import { Project } from "../models/Project";
 import { PortfolioInfo } from "../models/PortfolioInfo";
+import { env } from "../config/env";
 
-const seedProjects = [
-  {
-    title: "Student Grade Evaluation System",
-    slug: "student-grade-evaluation-system",
-    description:
-      "Developed a Python-based Student Grade Evaluation System for managing academic records efficiently.",
-    features: [
-      "Add Student Record",
-      "Update Student Record",
-      "Delete Student Record",
-      "Display Student Details",
-      "Grade Classification",
-      "Result Generation",
-      "Conditional Logic for Accurate Grade Evaluation",
-    ],
-    technologies: ["Python"],
-    imageUrl: "/images/projects/grade-system.svg",
-    githubUrl: "https://github.com/Satnam-dev",
-    liveDemoUrl: null,
-    featured: true,
-    order: 1,
-  },
-  {
-    title: "Password Strength Checker",
-    slug: "password-strength-checker",
-    description:
-      "Developed a GUI-based Password Strength Checker using Python Tkinter to evaluate password security.",
-    features: [
-      "User-Friendly GUI",
-      "Password Strength Analysis",
-      "Weak Password Detection",
-      "Medium Password Detection",
-      "Strong Password Detection",
-      "Real-Time Validation",
-      "Checks Length, Uppercase, Lowercase, Numbers, Special Characters",
-    ],
-    technologies: ["Python", "Tkinter"],
-    imageUrl: "/images/projects/password-checker.svg",
-    githubUrl: "https://github.com/Satnam-dev",
-    liveDemoUrl: null,
-    featured: true,
-    order: 2,
-  },
+const skills = [
+  { name: "Java", category: "Programming Languages", level: 85, order: 1 },
+  { name: "C", category: "Programming Languages", level: 80, order: 2 },
+  { name: "C++", category: "Programming Languages", level: 78, order: 3 },
+  { name: "JavaScript", category: "Programming Languages", level: 88, order: 4 },
+  { name: "Python", category: "Programming Languages", level: 70, order: 5 },
+  { name: "HTML5", category: "Frontend", level: 90, order: 1 },
+  { name: "CSS3", category: "Frontend", level: 85, order: 2 },
+  { name: "React", category: "Frontend", level: 85, order: 3 },
+  { name: "Next.js", category: "Frontend", level: 82, order: 4 },
+  { name: "Tailwind CSS", category: "Frontend", level: 88, order: 5 },
+  { name: "Node.js", category: "Backend", level: 85, order: 1 },
+  { name: "Express.js", category: "Backend", level: 85, order: 2 },
+  { name: "REST APIs", category: "Backend", level: 88, order: 3 },
+  { name: "JWT Authentication", category: "Backend", level: 80, order: 4 },
+  { name: "MongoDB", category: "Database", level: 82, order: 1 },
+  { name: "Mongoose", category: "Database", level: 80, order: 2 },
+  { name: "Git", category: "Developer Tools", level: 88, order: 1 },
+  { name: "GitHub", category: "Developer Tools", level: 90, order: 2 },
+  { name: "VS Code", category: "Developer Tools", level: 92, order: 3 },
+  { name: "Postman", category: "Developer Tools", level: 85, order: 4 },
 ];
 
-const seedCertifications = [
-  {
-    name: "Samsung Innovation Campus Certificate of Completion",
-    slug: "samsung-innovation-campus-coding-programming",
-    description:
-      "Completed the Coding & Programming course at Samsung Innovation Campus, demonstrating proficiency in programming fundamentals and software development practices.",
-    imageUrl: "/certificates/samsung-innovation-campus-certificate.png",
-    certificateUrl: "/certificates/samsung-innovation-campus-certificate.png",
-    downloadUrl: "/certificates/samsung-innovation-campus-certificate.png",
-    issuer: "Samsung Innovation Campus",
-    issuedDate: new Date("2026-02-11"),
-    courseName: "Coding & Programming",
-    programStartDate: new Date("2025-11-27"),
-    programEndDate: new Date("2026-02-11"),
-    affiliation: "Telecom Sector Skill Council",
-    order: 1,
-  },
-];
+export async function seedDatabase(): Promise<void> {
+  const adminExists = await Admin.findOne({ email: env.admin.email });
+  if (!adminExists) {
+    const hashed = await bcrypt.hash(env.admin.password, 12);
+    await Admin.create({ email: env.admin.email, password: hashed, name: "Parmjeet Singh" });
+    console.log("Admin user seeded");
+  }
 
-const seedExperienceImages = [
-  {
-    url: "/images/experience/python-lab-session.png",
-    alt: "Python with AI lab session at AI-LAB",
-    layout: "landscape" as const,
-  },
-  {
-    url: "/images/experience/ai-lab-banner.png",
-    alt: "AI-LAB training banner — GyanSetu One World AI",
-    layout: "portrait" as const,
-  },
-  {
-    url: "/images/experience/python-team-photo.png",
-    alt: "Team learning Python and AI together in the lab",
-    layout: "landscape" as const,
-  },
-];
+  if ((await Skill.countDocuments()) === 0) {
+    await Skill.insertMany(skills);
+    console.log("Skills seeded");
+  }
 
-const seedExperiences = [
-  {
-    title: "Python with AI Training",
-    organization: "AI-LAB · GyanSetu One World AI",
-    type: "training" as const,
-    currentLevel: "Level 1",
-    status: "current" as const,
-    startDate: new Date("2025-01-01"),
-    endDate: null,
-    learning: [
-      "Python Programming",
-      "Artificial Intelligence Fundamentals",
-      "Machine Learning Basics",
-      "Backend Development",
-      "Problem Solving",
-    ],
-    description:
-      "Currently undergoing structured Python with AI training at AI-LAB, building foundational skills in programming, AI concepts, and backend development through hands-on lab sessions and mentorship.",
-    images: seedExperienceImages,
-    order: 1,
-  },
-];
-
-const seedPortfolio = {
-  name: "Satnam Kumar",
-  title: "Aspiring Full-Stack Developer",
-  tagline: "Building practical applications with modern technologies",
-  about:
-    "I am passionate about learning software development and continuously improving my technical skills. I enjoy solving programming problems, building practical applications, and exploring modern technologies. My current focus areas include Full-Stack Development, Artificial Intelligence, Backend Development, and Software Engineering.",
-  education: {
-    degree: "B.Tech in Computer Science Engineering",
-    institution: "",
-    status: "Currently in 4th Year",
-  },
-  roles: [
-    "B.Tech Computer Science Engineering Student",
-    "Aspiring Full-Stack Developer",
-    "Python with AI Trainee",
-    "Software Developer",
-  ],
-  skills: {
-    programming: ["C", "C++", "Java (Basic)", "Python (Learning)"],
-    web: ["HTML5", "JavaScript", "Node.js"],
-    database: ["MongoDB"],
-    tools: ["Git", "GitHub", "Visual Studio Code", "Postman"],
-  },
-  softSkills: [
-    "Team Collaboration",
-    "Quick Learning Ability",
-    "Effective Communication",
-    "Problem Solving",
-    "Analytical Thinking",
-    "Adaptability",
-    "Time Management",
-  ],
-  socialLinks: {
-    github: "https://github.com/Satnam-dev",
-    linkedin: null,
-    email: null,
-  },
-  resumeUrl: "/resume/Satnam-Kumar-Resume.pdf",
-  stats: {
-    projectsCount: 2,
-    skillsCount: 12,
-    certificationsCount: 1,
-  },
-};
-
-export const seedDatabase = async (): Promise<void> => {
-  await connectDB();
-
-  await Promise.all([
-    Project.deleteMany({}),
-    Certification.deleteMany({}),
-    Experience.deleteMany({}),
-    PortfolioInfo.deleteMany({}),
-  ]);
-
-  await Project.insertMany(seedProjects);
-  await Certification.insertMany(seedCertifications);
-  await Experience.insertMany(seedExperiences);
-  await PortfolioInfo.create(seedPortfolio);
-
-  console.log("Database seeded successfully!");
-  console.log(`  - ${seedProjects.length} projects`);
-  console.log(`  - ${seedCertifications.length} certifications`);
-  console.log(`  - ${seedExperiences.length} experiences`);
-  console.log(`  - 1 portfolio profile`);
-};
-
-if (require.main === module) {
-  seedDatabase()
-    .then(() => mongoose.disconnect())
-    .catch((err) => {
-      console.error("Seed failed:", err);
-      process.exit(1);
+  if ((await Certification.countDocuments()) === 0) {
+    await Certification.create({
+      title: "Coding and Programming",
+      issuer: "Samsung Innovation Campus",
+      issueDate: "2025-11-24",
+      expiryDate: "2026-02-11",
+      description: "Completed Samsung Innovation Campus program in Coding and Programming.",
+      imageUrl: "/certificates/samsung-innovation-campus.png",
+      pdfUrl: "/certificates/samsung-innovation-campus.pdf",
+      order: 1,
     });
+    console.log("Certifications seeded");
+  }
+
+  if ((await Project.countDocuments()) === 0) {
+    await Project.insertMany([
+      {
+        title: "Project Strength Check",
+        description:
+          "Password and project strength checker built during Samsung Innovation Campus — analyzes input strength and helps improve secure coding practices.",
+        technologies: ["Python", "HTML", "CSS", "JavaScript"],
+        features: ["Strength analysis", "Interactive UI", "Team collaboration"],
+        githubUrl: "https://github.com/focalytsic/SIC-25-26-Team143",
+        liveUrl: "",
+        category: "fullstack",
+        tags: ["security", "sic", "python"],
+        status: "completed",
+        featured: true,
+        order: 1,
+      },
+    ]);
+    console.log("Projects seeded");
+  }
+
+  if (!(await PortfolioInfo.findOne())) {
+    await PortfolioInfo.create({
+      name: "Parmjeet Singh",
+      title: "Full Stack Developer",
+      email: "parmjeet7438@gmail.com",
+      bio: "I am Parmjeet Singh, a Final Year B.Tech Computer Science & Engineering student with a strong passion for backend development and modern web technologies.",
+      github: "https://github.com/parmjeet7438-bit",
+      linkedin: "https://www.linkedin.com/in/parmjeet-singh-17b713397",
+      resumeUrl: "/resume/parmjeet-singh-resume.pdf",
+      typingTitles: [
+        "Full Stack Developer",
+        "Backend Developer",
+        "Java Developer",
+        "Node.js Developer",
+        "AI Learner",
+      ],
+    });
+    console.log("Portfolio info seeded");
+  }
 }

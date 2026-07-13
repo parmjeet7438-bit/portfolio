@@ -1,25 +1,62 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { PortfolioInfo } from "../models/PortfolioInfo";
-import { ApiError } from "../utils/ApiError";
-import { asyncHandler } from "../utils/ApiError";
+import { Analytics } from "../models/Analytics";
 
-export const getPortfolio = asyncHandler(async (_req: Request, res: Response) => {
-  const portfolio = await PortfolioInfo.findOne();
-  if (!portfolio) throw new ApiError(404, "Portfolio info not found", "NOT_FOUND");
-  res.json({ success: true, data: portfolio });
-});
-
-export const updatePortfolio = asyncHandler(async (req: Request, res: Response) => {
-  let portfolio = await PortfolioInfo.findOne();
-
-  if (!portfolio) {
-    portfolio = await PortfolioInfo.create(req.body);
-    res.status(201).json({ success: true, data: portfolio, message: "Portfolio created" });
-    return;
+export async function getPortfolioInfo(_req: Request, res: Response, next: NextFunction) {
+  try {
+    let info = await PortfolioInfo.findOne();
+    if (!info) {
+      info = await PortfolioInfo.create({});
+    }
+    res.json({ success: true, data: info });
+  } catch (error) {
+    next(error);
   }
+}
 
-  Object.assign(portfolio, req.body);
-  await portfolio.save();
+export async function updatePortfolioInfo(req: Request, res: Response, next: NextFunction) {
+  try {
+    let info = await PortfolioInfo.findOne();
+    if (!info) info = await PortfolioInfo.create(req.body);
+    else info = await PortfolioInfo.findByIdAndUpdate(info._id, req.body, { new: true });
+    res.json({ success: true, data: info });
+  } catch (error) {
+    next(error);
+  }
+}
 
-  res.json({ success: true, data: portfolio, message: "Portfolio updated" });
-});
+export async function trackVisit(_req: Request, res: Response, next: NextFunction) {
+  try {
+    await Analytics.create({ type: "visit", metadata: {} });
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function trackResumeDownload(_req: Request, res: Response, next: NextFunction) {
+  try {
+    await Analytics.create({ type: "resume_download", metadata: {} });
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAnalytics(_req: Request, res: Response, next: NextFunction) {
+  try {
+    const [visits, downloads, contacts, messages] = await Promise.all([
+      Analytics.countDocuments({ type: "visit" }),
+      Analytics.countDocuments({ type: "resume_download" }),
+      Analytics.countDocuments({ type: "contact" }),
+      Analytics.find().sort({ createdAt: -1 }).limit(50),
+    ]);
+
+    res.json({
+      success: true,
+      data: { visits, downloads, contacts, recent: messages },
+    });
+  } catch (error) {
+    next(error);
+  }
+}

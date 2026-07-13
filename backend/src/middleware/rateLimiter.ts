@@ -1,14 +1,19 @@
 import rateLimit from "express-rate-limit";
 
-export const rateLimiter = rateLimit({
+export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: {
-    success: false,
-    error: {
-      code: "RATE_LIMIT",
-      message: "Too many requests, please try again later",
-      details: [],
-    },
-  },
+  max: 200,
+  message: { success: false, message: "Too many requests, please try again later." },
+});
+
+export const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: { success: false, message: "Too many contact submissions." },
+});
+
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { success: false, message: "Too many login attempts." },
 });

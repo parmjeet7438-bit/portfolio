@@ -1,24 +1,17 @@
 import { Router } from "express";
 import {
   getExperiences,
-  getExperience,
   createExperience,
   updateExperience,
   deleteExperience,
 } from "../controllers/experienceController";
-import { validateBody } from "../middleware/validateRequest";
+import { authMiddleware } from "../middleware/auth";
 
 const router = Router();
 
-const experienceValidation = validateBody([
-  { field: "title", required: true, type: "string" },
-  { field: "description", required: true, type: "string" },
-]);
-
 router.get("/", getExperiences);
-router.get("/:id", getExperience);
-router.post("/", experienceValidation, createExperience);
-router.put("/:id", updateExperience);
-router.delete("/:id", deleteExperience);
+router.post("/", authMiddleware, createExperience);
+router.put("/:id", authMiddleware, updateExperience);
+router.delete("/:id", authMiddleware, deleteExperience);
 
 export default router;

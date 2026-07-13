@@ -5,3 +5,5 @@ dist/
 .next/
 *.log
 .DS_Store
+frontend/.next/
+backend/dist/

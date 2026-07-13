@@ -1,37 +1,38 @@
-import { Schema, model, Document } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IProject extends Document {
   title: string;
-  slug: string;
   description: string;
-  features: string[];
+  image: string;
   technologies: string[];
-  imageUrl: string;
-  githubUrl?: string;
-  liveDemoUrl?: string | null;
+  features: string[];
+  githubUrl: string;
+  liveUrl: string;
+  category: string;
+  tags: string[];
+  status: "completed" | "in-progress" | "planned";
   featured: boolean;
   order: number;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 const projectSchema = new Schema<IProject>(
   {
-    title: { type: String, required: true, trim: true, maxlength: 120 },
-    slug: { type: String, required: true, unique: true, trim: true },
+    title: { type: String, required: true, trim: true },
     description: { type: String, required: true },
+    image: { type: String, default: "" },
+    technologies: [{ type: String }],
     features: [{ type: String }],
-    technologies: { type: [String], required: true, minlength: 1 },
-    imageUrl: { type: String, default: "/images/projects/default.png" },
-    githubUrl: { type: String },
-    liveDemoUrl: { type: String, default: null },
-    featured: { type: Boolean, default: true },
+    githubUrl: { type: String, default: "" },
+    liveUrl: { type: String, default: "" },
+    category: { type: String, default: "fullstack" },
+    tags: [{ type: String }],
+    status: { type: String, enum: ["completed", "in-progress", "planned"], default: "completed" },
+    featured: { type: Boolean, default: false },
     order: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
 
-projectSchema.index({ technologies: 1 });
-projectSchema.index({ order: 1 });
+projectSchema.index({ category: 1, featured: -1, order: 1 });
 
-export const Project = model<IProject>("Project", projectSchema);
+export const Project = mongoose.model<IProject>("Project", projectSchema);

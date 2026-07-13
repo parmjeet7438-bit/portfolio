@@ -1,80 +1,36 @@
-import { Schema, model, Document } from "mongoose";
-
-export interface IEducation {
-  degree: string;
-  institution: string;
-  status: string;
-}
-
-export interface ISkills {
-  programming: string[];
-  web: string[];
-  database: string[];
-  tools: string[];
-}
-
-export interface ISocialLinks {
-  github: string;
-  linkedin?: string | null;
-  email?: string | null;
-}
-
-export interface IStats {
-  projectsCount: number;
-  skillsCount: number;
-  certificationsCount: number;
-}
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IPortfolioInfo extends Document {
   name: string;
   title: string;
-  tagline: string;
-  about: string;
-  education: IEducation;
-  roles: string[];
-  skills: ISkills;
-  softSkills: string[];
-  socialLinks: ISocialLinks;
+  email: string;
+  phone: string;
+  location: string;
+  bio: string;
+  github: string;
+  linkedin: string;
   resumeUrl: string;
-  stats: IStats;
-  updatedAt: Date;
+  profileImage: string;
+  typingTitles: string[];
+  socialLinks: { platform: string; url: string }[];
 }
 
 const portfolioInfoSchema = new Schema<IPortfolioInfo>(
   {
-    name: { type: String, required: true },
-    title: { type: String, required: true },
-    tagline: { type: String, required: true },
-    about: { type: String, required: true },
-    education: {
-      degree: { type: String, required: true },
-      institution: { type: String, default: "" },
-      status: { type: String, required: true },
-    },
-    roles: [{ type: String }],
-    skills: {
-      programming: [{ type: String }],
-      web: [{ type: String }],
-      database: [{ type: String }],
-      tools: [{ type: String }],
-    },
-    softSkills: [{ type: String }],
-    socialLinks: {
-      github: { type: String, required: true },
-      linkedin: { type: String, default: null },
-      email: { type: String, default: null },
-    },
-    resumeUrl: { type: String, default: "/resume/Satnam-Kumar-Resume.pdf" },
-    stats: {
-      projectsCount: { type: Number, default: 0 },
-      skillsCount: { type: Number, default: 0 },
-      certificationsCount: { type: Number, default: 0 },
-    },
+    name: { type: String, default: "Parmjeet Singh" },
+    title: { type: String, default: "Full Stack Developer" },
+    email: { type: String, default: "parmjeet7438@gmail.com" },
+    phone: { type: String, default: "" },
+    location: { type: String, default: "India" },
+    bio: { type: String, default: "" },
+    github: { type: String, default: "https://github.com/parmjeet7438-bit" },
+    linkedin: { type: String, default: "https://www.linkedin.com/in/parmjeet-singh-17b713397" },
+    resumeUrl: { type: String, default: "/resume/parmjeet-singh-resume.pdf" },
+    profileImage: { type: String, default: "" },
+    typingTitles: [{ type: String }],
+    socialLinks: [{ platform: String, url: String }],
   },
-  { timestamps: { createdAt: false, updatedAt: true } }
+  { timestamps: true }
 );
 
-export const PortfolioInfo = model<IPortfolioInfo>(
-  "PortfolioInfo",
-  portfolioInfoSchema
-);
+export const PortfolioInfo = mongoose.model<IPortfolioInfo>("PortfolioInfo", portfolioInfoSchema);

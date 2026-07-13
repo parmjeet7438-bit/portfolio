@@ -1,18 +1,15 @@
 import express from "express";
 import { corsMiddleware } from "./middleware/cors";
-import { rateLimiter } from "./middleware/rateLimiter";
-import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { errorHandler } from "./middleware/errorHandler";
+import { apiLimiter } from "./middleware/rateLimiter";
 import routes from "./routes";
 
 const app = express();
 
 app.use(corsMiddleware);
 app.use(express.json({ limit: "10mb" }));
-app.use(rateLimiter);
-
-app.use("/api/v1", routes);
-
-app.use(notFoundHandler);
+app.use(express.urlencoded({ extended: true }));
+app.use("/api", apiLimiter, routes);
 app.use(errorHandler);
 
 export default app;
